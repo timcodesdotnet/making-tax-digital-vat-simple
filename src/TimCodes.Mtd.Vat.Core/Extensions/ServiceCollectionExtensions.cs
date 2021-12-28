@@ -18,6 +18,8 @@ namespace TimCodes.Mtd.Vat.Core.Extensions
             services.AddScoped<ITokenReceiver, OAuthTokenReveiver>();
             services.AddScoped<AuthorisationProvider>();
             services.AddScoped<IVatService, VatService>();
+            services.AddScoped<ISubmissionHistoryService, FileSubmissionHistoryService>();
+            services.AddScoped<IUserIdService, FileUserIdService>();
         }
     }
 }

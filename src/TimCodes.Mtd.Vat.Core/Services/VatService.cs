@@ -1,9 +1,12 @@
 ﻿using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using System.Net;
 using System.Net.Http.Headers;
+using System.Net.NetworkInformation;
 using System.Text;
 using System.Text.Json;
+using System.Web;
 using TimCodes.Mtd.Vat.Core.Authorisation;
 using TimCodes.Mtd.Vat.Core.Configuration;
 using TimCodes.Mtd.Vat.Core.Constants;
@@ -20,6 +23,8 @@ namespace TimCodes.Mtd.Vat.Core.Services
         private readonly IMemoryCache _memoryCache;
         private readonly AuthorisationProvider _authorisationProvider;
         private readonly HttpClient _client;
+        private readonly ISubmissionHistoryService _submissionHistoryService;
+        private readonly IUserIdService _userIdService;
         private readonly ILogger<VatService> _logger;
 
         public VatService(
@@ -27,12 +32,16 @@ namespace TimCodes.Mtd.Vat.Core.Services
             IMemoryCache memoryCache, 
             AuthorisationProvider authorisationProvider, 
             HttpClient client,
+            ISubmissionHistoryService submissionHistoryService,
+            IUserIdService userIdService,
             ILogger<VatService> logger)
         {
             _options = options.Value;
             _memoryCache = memoryCache;
             _authorisationProvider = authorisationProvider;
             _client = client;
+            _submissionHistoryService = submissionHistoryService;
+            _userIdService = userIdService;
             _logger = logger;
             _client.BaseAddress = _options.ApiBaseUri;
             _client.DefaultRequestHeaders.Add("Accept", HeaderConstants.AcceptHmrcJson);
@@ -57,7 +66,7 @@ namespace TimCodes.Mtd.Vat.Core.Services
                 var requestMessage = new HttpRequestMessage(HttpMethod.Get, $"organisations/vat/{_options.VatRegistrationNumber}/obligations?from={from:yyyy-MM-dd}&to={to:yyyy-MM-dd}");
                 requestMessage.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token.Token);
                 requestMessage.Headers.Add("Accept", HeaderConstants.AcceptHmrcJson);
-
+                AddFraudPreventionHeaders(requestMessage);
                 var httpResponse = await _client.SendAsync(requestMessage).ConfigureAwait(false);
                 return await Read<ObligationsResponse>(httpResponse).ConfigureAwait(false);
             }
@@ -74,13 +83,24 @@ namespace TimCodes.Mtd.Vat.Core.Services
                 requestMessage.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token.Token);
                 requestMessage.Headers.Add("Accept", HeaderConstants.AcceptHmrcJson);
 
+                AddFraudPreventionHeaders(requestMessage);
                 requestMessage.Content = new StringContent(JsonSerializer.Serialize(request, new JsonSerializerOptions
                 {
                     PropertyNamingPolicy = JsonNamingPolicy.CamelCase
                 }), Encoding.UTF8, HeaderConstants.AcceptJson);
 
                 var httpResponse = await _client.SendAsync(requestMessage).ConfigureAwait(false);
-                return await Read<VatReturnResponse>(httpResponse).ConfigureAwait(false);
+                var response = await Read<VatReturnResponse>(httpResponse).ConfigureAwait(false);
+                if (response != null) 
+                {
+                    if (response.WasSuccessful)
+                    {
+                        httpResponse.Headers.TryGetValues("Receipt-ID", out var values);
+                        response.ReceiptId = values?.FirstOrDefault();
+                        await _submissionHistoryService.AuditAsync(request, response).ConfigureAwait(false);
+                    }
+                }
+                return response;
             }
             _logger.LogError("Access token not available to submit vat return");
             return null;
@@ -109,10 +129,48 @@ namespace TimCodes.Mtd.Vat.Core.Services
                 return response;
             }
 
-            _logger.LogInformation($"Response received Success: {message.IsSuccessStatusCode}, Status Code: {message.StatusCode}, Message: {response.Message}");
+            _logger.LogInformation($"Response received Success: {message.IsSuccessStatusCode}, Status Code: {message.StatusCode}, Message: {content}");
 
             response.WasSuccessful = message.IsSuccessStatusCode;
             return response;
+        }
+
+        private void AddFraudPreventionHeaders(HttpRequestMessage message)
+        {
+            message.Headers.Add("Gov-Client-Connection-Method", "DESKTOP_APP_DIRECT");
+            message.Headers.Add("Gov-Client-Device-ID", _userIdService.GetDeviceId());
+            message.Headers.Add("Gov-Client-Local-IPs", string.Join(",", GetIps()));
+            message.Headers.Add("Gov-Client-Local-IPs-Timestamp", DateTime.UtcNow.ToString("yyyy-MM-ddThh:mm:ss.sssZ"));
+            message.Headers.Add("Gov-Client-MAC-Addresses", string.Join(",", GetMacAddress()));
+            //message.Headers.Add("Gov-Client-Multi-Factor", ""); //not implemented
+            message.Headers.Add("Gov-Client-Screens", "width=1920&height=1080&scaling-factor=1&colour-depth=16");
+            var offset = TimeZoneInfo.Local.GetUtcOffset(DateTime.Now);
+            message.Headers.Add("Gov-Client-Timezone", $"UTC{(offset.TotalMinutes < 0 ? "-" : "+")}{offset:hh\\:mm}");
+            message.Headers.Add("Gov-Client-User-Agent", $"os-family={Environment.OSVersion.Platform}&os-version={Environment.OSVersion.VersionString}&device-manufacturer=PC%20Specialist&device-model=Custom");
+            message.Headers.Add("Gov-Client-Window-Size", "width=816&height=489");
+            message.Headers.Add("Gov-Client-User-IDs", $"os={Environment.UserName}");
+            message.Headers.Add("Gov-Vendor-License-IDs", "MIT");
+            message.Headers.Add("Gov-Vendor-Product-Name", _options.ProductName);
+            message.Headers.Add("Gov-Vendor-Version", $"{_options.ProductName}={_options.Version}");
+        }
+
+        private static List<string> GetIps()
+        {
+            var hostName = Dns.GetHostName();
+
+            var iphostentry = Dns.GetHostEntry(hostName);
+
+            return iphostentry.AddressList.Select(q => HttpUtility.UrlEncode(q.ToString())).ToList();
+        }
+
+        private static List<string> GetMacAddress()
+        {
+            return
+                (
+                    from nic in NetworkInterface.GetAllNetworkInterfaces()
+                    where nic.OperationalStatus == OperationalStatus.Up
+                    select HttpUtility.UrlEncode(nic.GetPhysicalAddress().ToString())
+                ).ToList();
         }
     }
 }

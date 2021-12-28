@@ -16,6 +16,10 @@
         public string Scope { get; set; }
 
         public string VatRegistrationNumber { get; set; }
+
+        public string Version { get; set; }
+
+        public string ProductName { get; set; }
     }
 #pragma warning restore CS8618
 }

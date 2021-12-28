@@ -97,7 +97,7 @@ namespace TimCodes.Mtd.Vat.App
             }
         }
 
-        private void DataGridObligations_CellDoubleClick(object sender, DataGridViewCellEventArgs e)
+        private async void DataGridObligations_CellDoubleClick(object sender, DataGridViewCellEventArgs e)
         {
             var item = (Obligation)DataGridObligations.Rows[e.RowIndex].DataBoundItem;
             if (item.Received.HasValue)
@@ -114,6 +114,8 @@ namespace TimCodes.Mtd.Vat.App
                 }
                 form.Obligation = item;
                 form.ShowDialog(this);
+
+                await PopulateObligationsAsync();
             }
         }
     }

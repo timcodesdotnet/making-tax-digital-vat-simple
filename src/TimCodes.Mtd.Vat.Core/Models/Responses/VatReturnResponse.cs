@@ -9,5 +9,7 @@
         public string? FormBundleNumber { get; set; }
 
         public string? ChargeRefNumber { get; set; }
+
+        public string? ReceiptId { get; set; }
     }
 }
