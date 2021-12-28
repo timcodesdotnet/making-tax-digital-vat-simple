@@ -2,7 +2,7 @@
 {
     public class ObligationsResponse : Response
     {
-        public Obligation[] Obligations { get; set; }
+        public Obligation[]? Obligations { get; set; }
     }
 
     public class Obligation
@@ -15,8 +15,8 @@
 
         public DateTime? Received { get; set; }
 
-        public string Status { get; set; }
+        public string? Status { get; set; }
 
-        public string PeriodKey { get; set; }
+        public string? PeriodKey { get; set; }
     }
 }

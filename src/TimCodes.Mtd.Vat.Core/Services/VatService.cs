@@ -2,10 +2,12 @@
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using System.Net.Http.Headers;
+using System.Text;
 using System.Text.Json;
 using TimCodes.Mtd.Vat.Core.Authorisation;
 using TimCodes.Mtd.Vat.Core.Configuration;
 using TimCodes.Mtd.Vat.Core.Constants;
+using TimCodes.Mtd.Vat.Core.Models.Requests;
 using TimCodes.Mtd.Vat.Core.Models.Responses;
 
 namespace TimCodes.Mtd.Vat.Core.Services
@@ -33,7 +35,7 @@ namespace TimCodes.Mtd.Vat.Core.Services
             _client = client;
             _logger = logger;
             _client.BaseAddress = _options.ApiBaseUri;
-            _client.DefaultRequestHeaders.Add("Accept", HeaderConstants.Accept);
+            _client.DefaultRequestHeaders.Add("Accept", HeaderConstants.AcceptHmrcJson);
         }
 
         public async Task<string> GetBusinessName()
@@ -54,12 +56,33 @@ namespace TimCodes.Mtd.Vat.Core.Services
             {
                 var requestMessage = new HttpRequestMessage(HttpMethod.Get, $"organisations/vat/{_options.VatRegistrationNumber}/obligations?from={from:yyyy-MM-dd}&to={to:yyyy-MM-dd}");
                 requestMessage.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token.Token);
-                requestMessage.Headers.Add("Accept", HeaderConstants.Accept);
+                requestMessage.Headers.Add("Accept", HeaderConstants.AcceptHmrcJson);
 
                 var httpResponse = await _client.SendAsync(requestMessage).ConfigureAwait(false);
                 return await Read<ObligationsResponse>(httpResponse).ConfigureAwait(false);
             }
             _logger.LogError("Access token not available to get obligations");
+            return null;
+        }
+
+        public async Task<VatReturnResponse?> SubmitVatReturnAsync(VatReturnRequest request)
+        {
+            var token = await _authorisationProvider.GetAccessTokenAsync();
+            if (token != null)
+            {
+                var requestMessage = new HttpRequestMessage(HttpMethod.Post, $"organisations/vat/{_options.VatRegistrationNumber}/returns");
+                requestMessage.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token.Token);
+                requestMessage.Headers.Add("Accept", HeaderConstants.AcceptHmrcJson);
+
+                requestMessage.Content = new StringContent(JsonSerializer.Serialize(request, new JsonSerializerOptions
+                {
+                    PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+                }), Encoding.UTF8, HeaderConstants.AcceptJson);
+
+                var httpResponse = await _client.SendAsync(requestMessage).ConfigureAwait(false);
+                return await Read<VatReturnResponse>(httpResponse).ConfigureAwait(false);
+            }
+            _logger.LogError("Access token not available to submit vat return");
             return null;
         }
 

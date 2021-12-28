@@ -55,6 +55,7 @@
             this.DataGridObligations.RowTemplate.Height = 25;
             this.DataGridObligations.Size = new System.Drawing.Size(800, 409);
             this.DataGridObligations.TabIndex = 2;
+            this.DataGridObligations.CellDoubleClick += new System.Windows.Forms.DataGridViewCellEventHandler(this.DataGridObligations_CellDoubleClick);
             // 
             // BtnToggleSignin
             // 

@@ -11,6 +11,7 @@ namespace TimCodes.Mtd.Vat.Core.Extensions
         public static void AddVatServices(this IServiceCollection services, IConfiguration config)
         {
             services.Configure<MtdOptions>(config.GetSection(nameof(MtdOptions)));
+
             services.AddHttpClient();
             services.AddMemoryCache();
             services.AddScoped<ITokenCache, FileTokenCache>();

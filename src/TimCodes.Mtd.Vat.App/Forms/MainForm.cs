@@ -1,5 +1,7 @@
+using TimCodes.Mtd.Vat.App.Forms;
 using TimCodes.Mtd.Vat.App.Services;
 using TimCodes.Mtd.Vat.Core.Authorisation;
+using TimCodes.Mtd.Vat.Core.Models.Responses;
 using TimCodes.Mtd.Vat.Core.Services;
 
 namespace TimCodes.Mtd.Vat.App
@@ -29,7 +31,7 @@ namespace TimCodes.Mtd.Vat.App
                 return;
             }
 
-            DataGridObligations.DataSource = response.Obligations;
+            DataGridObligations.DataSource = response.Obligations?.OrderBy(q => q.Due).ToArray();
         }
 
         private async Task<bool> CheckSignInStatusAsync()
@@ -92,6 +94,26 @@ namespace TimCodes.Mtd.Vat.App
             else
             {
                 await SignInAsync();
+            }
+        }
+
+        private void DataGridObligations_CellDoubleClick(object sender, DataGridViewCellEventArgs e)
+        {
+            var item = (Obligation)DataGridObligations.Rows[e.RowIndex].DataBoundItem;
+            if (item.Received.HasValue)
+            {
+                MessageBox.Show("This return has already been submitted");
+            }
+            else
+            {
+                var form = _formService.GetForm<VatReturnSelectionForm>();
+                if (form == null)
+                {
+                    MessageBox.Show("Form not initialised");
+                    return;
+                }
+                form.Obligation = item;
+                form.ShowDialog(this);
             }
         }
     }
