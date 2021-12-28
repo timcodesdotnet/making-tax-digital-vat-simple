@@ -142,7 +142,7 @@ namespace TimCodes.Mtd.Vat.Core.Services
             message.Headers.Add("Gov-Client-Local-IPs", string.Join(",", GetIps()));
             message.Headers.Add("Gov-Client-Local-IPs-Timestamp", DateTime.UtcNow.ToString("yyyy-MM-ddThh:mm:ss.sssZ"));
             message.Headers.Add("Gov-Client-MAC-Addresses", string.Join(",", GetMacAddress()));
-            //message.Headers.Add("Gov-Client-Multi-Factor", ""); //not implemented
+            message.Headers.Add("Gov-Client-Multi-Factor", $"type=TOTP&timestamp={HttpUtility.UrlEncode(MfaTracker.LastChecked.ToString("yyyy-MM-ddThh:mmZ"))}&unique-reference={HttpUtility.UrlEncode(MfaTracker.Identifier)}");
             message.Headers.Add("Gov-Client-Screens", "width=1920&height=1080&scaling-factor=1&colour-depth=16");
             var offset = TimeZoneInfo.Local.GetUtcOffset(DateTime.Now);
             message.Headers.Add("Gov-Client-Timezone", $"UTC{(offset.TotalMinutes < 0 ? "-" : "+")}{offset:hh\\:mm}");

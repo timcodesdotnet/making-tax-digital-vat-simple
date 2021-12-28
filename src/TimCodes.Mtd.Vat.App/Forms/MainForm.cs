@@ -79,6 +79,9 @@ namespace TimCodes.Mtd.Vat.App
 
         private async void MainForm_Load(object sender, EventArgs e)
         {
+            var mfa = _formService.GetForm<MfaForm>();
+            mfa?.ShowDialog(this);
+
             if (!await CheckSignInStatusAsync())
             {
                 await SignInAsync();

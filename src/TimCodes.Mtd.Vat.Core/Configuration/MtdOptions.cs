@@ -20,6 +20,8 @@
         public string Version { get; set; }
 
         public string ProductName { get; set; }
+
+        public string MfaKey { get; set; }
     }
 #pragma warning restore CS8618
 }
