@@ -3,8 +3,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using TimCodes.Mtd.Vat.App.Extensions;
 using TimCodes.Mtd.Vat.App.Services;
-using TimCodes.Mtd.Vat.Core.Authorisation;
-using TimCodes.Mtd.Vat.Core.Configuration;
 using TimCodes.Mtd.Vat.Core.Extensions;
 
 namespace TimCodes.Mtd.Vat.App

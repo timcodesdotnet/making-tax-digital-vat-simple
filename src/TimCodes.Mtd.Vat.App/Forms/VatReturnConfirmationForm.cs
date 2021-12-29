@@ -21,7 +21,7 @@ namespace TimCodes.Mtd.Vat.App.Forms
         {
             if (DataToSubmit == null || Obligation == null) return;
 
-            LblPeriod.Text = $"{Obligation.PeriodKey} {Obligation.Start:MMM yyyy}-{Obligation.End:MMM yyyy}";
+            LblPeriod.Text = $"{Obligation.Start:MMM yyyy}-{Obligation.End:MMM yyyy}";
             LblBox1.Text = DataToSubmit.VatDueSales.ToString("C2");
             LblBox2.Text = DataToSubmit.VatDueAcquisitions.ToString("C2");
             LblBox3.Text = DataToSubmit.TotalVatDue.ToString("C2");

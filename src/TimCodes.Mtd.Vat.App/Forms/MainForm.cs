@@ -32,6 +32,12 @@ namespace TimCodes.Mtd.Vat.App
             }
 
             DataGridObligations.DataSource = response.Obligations?.OrderBy(q => q.Due).ToArray();
+
+            DataGridObligations.Columns[nameof(Obligation.PeriodKey)].Visible = false;
+            DataGridObligations.Columns[nameof(Obligation.Start)].DefaultCellStyle.Format =
+                DataGridObligations.Columns[nameof(Obligation.End)].DefaultCellStyle.Format =
+                DataGridObligations.Columns[nameof(Obligation.Due)].DefaultCellStyle.Format =
+                DataGridObligations.Columns[nameof(Obligation.Received)].DefaultCellStyle.Format = "yyyy-MM-dd";
         }
 
         private async Task<bool> CheckSignInStatusAsync()

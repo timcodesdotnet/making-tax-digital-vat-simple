@@ -44,5 +44,13 @@ namespace TimCodes.Mtd.Vat.App.Forms
                 MessageBox.Show("Incorrect code");
             }
         }
+
+        private void TxtMfa_KeyUp(object sender, KeyEventArgs e)
+        {
+            if (e.KeyCode == Keys.Enter)
+            {
+                BtnConfirm_Click(sender, e);
+            }
+        }
     }
 }

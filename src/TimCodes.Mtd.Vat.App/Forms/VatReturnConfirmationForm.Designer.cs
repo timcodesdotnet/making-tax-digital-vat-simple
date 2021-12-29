@@ -51,6 +51,7 @@
             this.BtnCancel = new System.Windows.Forms.Button();
             this.label3 = new System.Windows.Forms.Label();
             this.LblPeriod = new System.Windows.Forms.Label();
+            this.label8 = new System.Windows.Forms.Label();
             this.SuspendLayout();
             // 
             // label1
@@ -261,11 +262,24 @@
             this.LblPeriod.Size = new System.Drawing.Size(0, 15);
             this.LblPeriod.TabIndex = 22;
             // 
+            // label8
+            // 
+            this.label8.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point);
+            this.label8.Location = new System.Drawing.Point(287, 347);
+            this.label8.Name = "label8";
+            this.label8.Size = new System.Drawing.Size(501, 37);
+            this.label8.TabIndex = 23;
+            this.label8.Text = "When you submit this VAT information you are making a legal declaration that the " +
+    "information is true and complete. A false declaration can result in prosecution." +
+    "";
+            this.label8.TextAlign = System.Drawing.ContentAlignment.TopRight;
+            // 
             // VatReturnConfirmationForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 15F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(800, 450);
+            this.Controls.Add(this.label8);
             this.Controls.Add(this.LblPeriod);
             this.Controls.Add(this.label3);
             this.Controls.Add(this.BtnCancel);
@@ -321,5 +335,6 @@
         private Button BtnCancel;
         private Label label3;
         private Label LblPeriod;
+        private Label label8;
     }
 }

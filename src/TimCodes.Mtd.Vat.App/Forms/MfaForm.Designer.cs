@@ -39,6 +39,7 @@
             this.TxtMfa.Name = "TxtMfa";
             this.TxtMfa.Size = new System.Drawing.Size(149, 39);
             this.TxtMfa.TabIndex = 0;
+            this.TxtMfa.KeyUp += new System.Windows.Forms.KeyEventHandler(this.TxtMfa_KeyUp);
             // 
             // BtnConfirm
             // 
