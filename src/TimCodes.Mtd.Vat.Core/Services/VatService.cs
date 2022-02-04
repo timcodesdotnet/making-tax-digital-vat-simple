@@ -58,7 +58,7 @@ namespace TimCodes.Mtd.Vat.Core.Services
             return value?.Target?.Name ?? "Unknown";
         }
 
-        public async Task<ObligationsResponse?> GetObligationsAsync(DateTime from, DateTime to)
+        public async Task<ObligationsResponse?> GetObligationsAsync(DateTime from, DateTime to, FraudPreventionData fraudPreventionData)
         {
             var token = await _authorisationProvider.GetAccessTokenAsync();
             if (token != null)
@@ -66,7 +66,7 @@ namespace TimCodes.Mtd.Vat.Core.Services
                 var requestMessage = new HttpRequestMessage(HttpMethod.Get, $"organisations/vat/{_options.VatRegistrationNumber}/obligations?from={from:yyyy-MM-dd}&to={to:yyyy-MM-dd}");
                 requestMessage.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token.Token);
                 requestMessage.Headers.Add("Accept", HeaderConstants.AcceptHmrcJson);
-                AddFraudPreventionHeaders(requestMessage);
+                AddFraudPreventionHeaders(requestMessage, fraudPreventionData);
                 var httpResponse = await _client.SendAsync(requestMessage).ConfigureAwait(false);
                 return await Read<ObligationsResponse>(httpResponse).ConfigureAwait(false);
             }
@@ -74,7 +74,7 @@ namespace TimCodes.Mtd.Vat.Core.Services
             return null;
         }
 
-        public async Task<VatReturnResponse?> SubmitVatReturnAsync(VatReturnRequest request)
+        public async Task<VatReturnResponse?> SubmitVatReturnAsync(VatReturnRequest request, FraudPreventionData fraudPreventionData)
         {
             var token = await _authorisationProvider.GetAccessTokenAsync();
             if (token != null)
@@ -83,7 +83,7 @@ namespace TimCodes.Mtd.Vat.Core.Services
                 requestMessage.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token.Token);
                 requestMessage.Headers.Add("Accept", HeaderConstants.AcceptHmrcJson);
 
-                AddFraudPreventionHeaders(requestMessage);
+                AddFraudPreventionHeaders(requestMessage, fraudPreventionData);
                 requestMessage.Content = new StringContent(JsonSerializer.Serialize(request, new JsonSerializerOptions
                 {
                     PropertyNamingPolicy = JsonNamingPolicy.CamelCase
@@ -135,21 +135,21 @@ namespace TimCodes.Mtd.Vat.Core.Services
             return response;
         }
 
-        private void AddFraudPreventionHeaders(HttpRequestMessage message)
+        private void AddFraudPreventionHeaders(HttpRequestMessage message, FraudPreventionData fraudPreventionData)
         {
             message.Headers.Add("Gov-Client-Connection-Method", "DESKTOP_APP_DIRECT");
             message.Headers.Add("Gov-Client-Device-ID", _userIdService.GetDeviceId());
             message.Headers.Add("Gov-Client-Local-IPs", string.Join(",", GetIps()));
-            message.Headers.Add("Gov-Client-Local-IPs-Timestamp", DateTime.UtcNow.ToString("yyyy-MM-ddThh:mm:ss.sssZ"));
+            message.Headers.Add("Gov-Client-Local-IPs-Timestamp", DateTime.UtcNow.ToString("yyyy-MM-ddThh:mm:ss.fffZ"));
             message.Headers.Add("Gov-Client-MAC-Addresses", string.Join(",", GetMacAddress()));
             message.Headers.Add("Gov-Client-Multi-Factor", $"type=TOTP&timestamp={HttpUtility.UrlEncode(MfaTracker.LastChecked.ToString("yyyy-MM-ddThh:mmZ"))}&unique-reference={HttpUtility.UrlEncode(MfaTracker.Identifier)}");
-            message.Headers.Add("Gov-Client-Screens", "width=1920&height=1080&scaling-factor=1&colour-depth=16");
+            message.Headers.Add("Gov-Client-Screens", fraudPreventionData.Screens);
             var offset = TimeZoneInfo.Local.GetUtcOffset(DateTime.Now);
             message.Headers.Add("Gov-Client-Timezone", $"UTC{(offset.TotalMinutes < 0 ? "-" : "+")}{offset:hh\\:mm}");
-            message.Headers.Add("Gov-Client-User-Agent", $"os-family={Environment.OSVersion.Platform}&os-version={Environment.OSVersion.VersionString}&device-manufacturer=PC%20Specialist&device-model=Custom");
-            message.Headers.Add("Gov-Client-Window-Size", "width=816&height=489");
+            message.Headers.Add("Gov-Client-User-Agent", $"os-family={HttpUtility.UrlEncode(Environment.OSVersion.Platform.ToString())}&os-version={HttpUtility.UrlEncode(Environment.OSVersion.VersionString)}&device-manufacturer=PC%20Specialist&device-model=Custom");
+            message.Headers.Add("Gov-Client-Window-Size", fraudPreventionData.Window);
             message.Headers.Add("Gov-Client-User-IDs", $"os={Environment.UserName}");
-            message.Headers.Add("Gov-Vendor-License-IDs", "MIT");
+            message.Headers.Add("Gov-Vendor-License-IDs", $"{_options.ProductName}=7abc1a233092fc104c7af72a89c0829c");
             message.Headers.Add("Gov-Vendor-Product-Name", _options.ProductName);
             message.Headers.Add("Gov-Vendor-Version", $"{_options.ProductName}={_options.Version}");
         }
@@ -170,7 +170,7 @@ namespace TimCodes.Mtd.Vat.Core.Services
                     from nic in NetworkInterface.GetAllNetworkInterfaces()
                     where nic.OperationalStatus == OperationalStatus.Up
                     select HttpUtility.UrlEncode(nic.GetPhysicalAddress().ToString())
-                ).ToList();
+                ).Where(q=>!string.IsNullOrEmpty(q)).ToList();
         }
     }
 }

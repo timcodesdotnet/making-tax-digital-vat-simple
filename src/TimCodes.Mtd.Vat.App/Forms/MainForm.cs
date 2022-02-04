@@ -24,7 +24,7 @@ namespace TimCodes.Mtd.Vat.App
 
         private async Task PopulateObligationsAsync()
         {
-            var response = await _vatService.GetObligationsAsync(DateTime.Today.AddDays(-180), DateTime.Today);
+            var response = await _vatService.GetObligationsAsync(DateTime.Today.AddDays(-180), DateTime.Today, FraudPrevention.GetFraudPrevention(this));
             if (response?.WasSuccessful != true)
             {
                 MessageBox.Show("Error getting obligations");

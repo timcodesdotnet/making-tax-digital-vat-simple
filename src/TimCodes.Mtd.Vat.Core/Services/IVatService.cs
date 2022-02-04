@@ -6,7 +6,7 @@ namespace TimCodes.Mtd.Vat.Core.Services
     public interface IVatService
     {
         Task<string> GetBusinessName();
-        Task<ObligationsResponse?> GetObligationsAsync(DateTime from, DateTime to);
-        Task<VatReturnResponse?> SubmitVatReturnAsync(VatReturnRequest request);
+        Task<ObligationsResponse?> GetObligationsAsync(DateTime from, DateTime to, FraudPreventionData fraudPreventionData);
+        Task<VatReturnResponse?> SubmitVatReturnAsync(VatReturnRequest request, FraudPreventionData fraudPreventionData);
     }
 }

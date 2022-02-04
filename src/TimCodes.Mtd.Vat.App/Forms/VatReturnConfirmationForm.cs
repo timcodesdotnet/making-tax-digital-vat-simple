@@ -1,4 +1,5 @@
-﻿using TimCodes.Mtd.Vat.Core.Models.Requests;
+﻿using TimCodes.Mtd.Vat.App.Services;
+using TimCodes.Mtd.Vat.Core.Models.Requests;
 using TimCodes.Mtd.Vat.Core.Models.Responses;
 using TimCodes.Mtd.Vat.Core.Services;
 
@@ -45,7 +46,7 @@ namespace TimCodes.Mtd.Vat.App.Forms
             DataToSubmit.PeriodKey = Obligation.PeriodKey;
             DataToSubmit.Finalised = true;
 
-            var response = await _vatService.SubmitVatReturnAsync(DataToSubmit);
+            var response = await _vatService.SubmitVatReturnAsync(DataToSubmit, FraudPrevention.GetFraudPrevention(this));
             if (response != null)
             {
                 if (response.WasSuccessful)
